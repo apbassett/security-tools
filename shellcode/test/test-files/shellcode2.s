@@ -100,6 +100,16 @@ main:
   mov %esp, %ecx
   int $0x80
 ##################################################
+# Print 't'
+##################################################
+  push $0x6d
+  mov $4, %eax                                    # Opcode for write system call
+  mov $1, %ebx                                    # First arg: fd = 1
+  mov $1, %edx                                    # Third arg: length of the string to print 
+  xor $0x19, (%esp)
+  mov %esp, %ecx
+  int $0x80
+##################################################
 # Print a newline character
 ##################################################
   push $0x65

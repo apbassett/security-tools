@@ -5,69 +5,71 @@ import contextlib
 import io
 
 class TestShellcodeLinux(unittest.TestCase):
+  py_to_use = None
 
   @classmethod
   def setUpClass(cls):
+    if 'Python 2' in cls.output_capture(cls, ['python', '--version']):
+      cls.py_to_use = 'python3'
+    else:
+      cls.py_to_use = 'python'
+
     if sys.version_info[0] < 3:
-      print(sys.version_info[0])
       print('ERROR: Current Python version must be >= 3.5.  Exiting.')
       exit()
-    print('Preparing to run test suite for Linux machines.\\n' +
+    print('Preparing to run test suite for Linux machines.\n' +
           'IMPORTANT: MAKE SURE gcc-multilib is installed.')
 
   @classmethod
   def tearDownClass(cls):
-    subprocess.call('rm output.txt 2> /dev/null')
-    subprocess.call('rm -r ../shellcode-files 2> /dev/null')
+    subprocess.call(['rm', 'output.txt'], stderr=subprocess.DEVNULL)
+    subprocess.call(['rm', '-r', 'shellcode-files'], stderr=subprocess.DEVNULL)
 
   def output_capture(self, cmd):
-    subprocess.call(cmd, shell=True)
-    output = open('output.txt', 'r') 
-    out_string = output.read()
-    output.close()
+    w_fd = open('output.txt', 'w')
+    subprocess.call(cmd, stdout=w_fd, stderr=w_fd)
+    r_fd = open('output.txt', 'r')
+    out_string = r_fd.read()
+    r_fd.close()
+    w_fd.close()
     return out_string
 
   def get_expected1(self):
-    return '\\xeb\\x20\\x5e\\xb8\\x04\\x00\\x00\\x00\\xbb\\x01\\x00\\x00\\x00\\x89\\xf1' + 
-           '\\xba\\x09\\x00\\x00\\x00\\xcd\\x80\\xb8\\x01\\x00\\x00\\x00\\xbb\\x00\\x00' +
-           '\\x00\\x00\\xcd\\x80\\xe8\\xdb\\xff\\xff\\xff\\x61\\x70\\x62\\x61\\x73\\x73' + 
-           '\\x65\\x74\\x0a\\x00\\x66\\x90\\x66\\x90'
+    s1_fd = open('test-files/shellcode1', 'r')
+    s1 = s1_fd.read()
+    s1_fd.close()
+    return s1
 
   def get_expected2(self):
-    return '\\x6a\\x68\\xb8\\x04\\x00\\x00\\x00\\xbb\\x01\\x00\\x00\\x00\\xba\\x01\\x00' +
-           '\\x00\\x00\\x83\\x34\\x24\\x09\\x89\\xe1\\xcd\\x80\\x6a\\x63\\xb8\\x04\\x00' +
-           '\\x00\\x00\\xbb\\x01\\x00\\x00\\x00\\xba\\x01\\x00\\x00\\x00\\x83\\x34\\x24' +
-           '\\x13\\x89\\xe1\\xcd\\x80\\x6a\\x6b\\xb8\\x04\\x00\\x00\\x00\\xbb\\x01\\x00' +
-           '\\x00\\x00\\xba\\x01\\x00\\x00\\x00\\x83\\x34\\x24\\x09\\x89\\xe1\\xcd\\x80' +
-           '\\x6a\\x65\\xb8\\x04\\x00\\x00\\x00\\xbb\\x01\\x00\\x00\\x00\\xba\\x01\\x00' +
-           '\\x00\\x00\\x83\\x34\\x24\\x04\\x89\\xe1\\xcd\\x80\\x6a\\x72\\xb8\\x04\\x00' +
-           '\\x00\\x00\\xbb\\x01\\x00\\x00\\x00\\xba\\x01\\x00\\x00\\x00\\x83\\x34\\x24' +
-           '\\x01\\x89\\xe1\\xcd\\x80\\x6a\\x74\\xb8\\x04\\x00\\x00\\x00\\xbb\\x01\\x00' +
-           '\\x00\\x00\\xba\\x01\\x00\\x00\\x00\\x83\\x34\\x24\\x07\\x89\\xe1\\xcd\\x80' +
-           '\\x6a\\x69\\xb8\\x04\\x00\\x00\\x00\\xbb\\x01\\x00\\x00\\x00\\xba\\x01\\x00' +
-           '\\x00\\x00\\x83\\x34\\x24\\x0c\\x89\\xe1\\xcd\\x80\\x6a\\x6d\\xb8\\x04\\x00' +
-           '\\x00\\x00\\xbb\\x01\\x00\\x00\\x00\\xba\\x01\\x00\\x00\\x00\\x83\\x34\\x24' +
-           '\\x19\\x89\\xe1\\xcd\\x80\\x6a\\x65\\xb8\\x04\\x00\\x00\\x00\\xbb\\x01\\x00' +
-           '\\x00\\x00\\xba\\x01\\x00\\x00\\x00\\x83\\x34\\x24\\x6f\\x89\\xe1\\xcd\\x80' +
-           '\\xb8\\x01\\x00\\x00\\x00\\xbb\\x00\\x00\\x00\\x00\\xcd\\x80\\x66\\x90\\x66' +
-           '\\x90\\x66\\x90\\x66\\x90'
+    s2_fd = open('test-files/shellcode2', 'r')
+    s2 = s2_fd.read()
+    s2_fd.close()
+    return s2
   
   def test_invalid_args(self):
-    self.assertTrue('Usage instructions:' in self.output_capture('python ../shellcode.py > output.txt'))
-    self.assertTrue('Usage instructions:' in self.output_capture('python ../shellcode.py -help > output.txt'))
-    self.assertTrue('Usage instructions:' in self.output_capture('python ../shellcode.py -garbage> output.txt'))
-    self.assertTrue('Usage instructions:' in self.output_capture('python ../shellcode.py -src test/test-files/shellcode1.s -exec > output.txt'))
-    self.assertTrue('Usage instructions:' in self.output_capture('python ../shellcode.py -exec -subroutines -main -exit > output.txt'))
-    self.assertTrue('Usage instructions:' in self.output_capture('python ../shellcode.py -src test/test-files/shellcode1.s -subroutines main get_addr printunity -m99> output.txt'))
-    self.assertTrue('NOT FOUND' in self.output_capture('python ../shellcode.py -src test/test-files/doesntexist.asm -subroutines main exit -m32 > output.txt'))
+    self.assertTrue('Usage instructions:' in self.output_capture([self.py_to_use, '../shellcode.py']))
+    self.assertTrue('Usage instructions:' in self.output_capture([self.py_to_use, '../shellcode.py', '-help']))
+    self.assertTrue('Usage instructions:' in self.output_capture([self.py_to_use, '../shellcode.py', '-garbage']))
+    self.assertTrue('Usage instructions:' in self.output_capture([self.py_to_use, '../shellcode.py', '-src', 'test-files/shellcode1.s', '-exec']))
+    self.assertTrue('Usage instructions:' in self.output_capture([self.py_to_use, '../shellcode.py', '-exec', '-subroutines', '-main', '-exit']))
+    self.assertTrue('Usage instructions:' in self.output_capture([self.py_to_use, '../shellcode.py', '-src', 'test-files/shellcode1.s', '-subroutines', 'main', 'get_addr', 'printunity', '-m99']))
+    self.assertTrue('NOT FOUND' in self.output_capture([self.py_to_use, '../shellcode.py', '-src', 'test-files/doesntexist.asm', '-subroutines', 'main', 'exit', '-m32']))
 
-  #def test_shellcode_fromsrc_print(self):
+  def test_shellcode_fromsrc_print(self):
+    self.assertTrue(str(self.get_expected1()) in self.output_capture([self.py_to_use, '../shellcode.py', '-src', 'test-files/shellcode1.s', '-subroutines', 'main', 'get_addr', 'printunity', '-print-only']))
+    self.assertTrue(str(self.get_expected2()) in self.output_capture([self.py_to_use, '../shellcode.py', '-src', 'test-files/shellcode2.s', '-subroutines', 'main', 'exit', '-print-only']))
 
-  #def test_shellcode_fromsrc_run(self):
+  def test_shellcode_fromsrc_run(self):
+    self.assertTrue('apbassett' in self.output_capture([self.py_to_use, '../shellcode.py', '-src', 'test-files/shellcode1.s', '-subroutines', 'main', 'get_addr', 'printunity']))
+    self.assertTrue('apbassett' in self.output_capture([self.py_to_use, '../shellcode.py', '-src', 'test-files/shellcode2.s', '-subroutines', 'main', 'exit']))
   
-  #def test_shellcode_exec_print(self):
+  def test_shellcode_exec_print(self):
+    self.assertTrue(str(self.get_expected1()) in self.output_capture([self.py_to_use, '../shellcode.py', '-exec', 'test-files/shellcode1bin', '-subroutines', 'main', 'get_addr', 'printunity', '-print-only']))
+    self.assertTrue(str(self.get_expected2()) in self.output_capture([self.py_to_use, '../shellcode.py', '-exec', 'test-files/shellcode2bin', '-subroutines', 'main', 'exit', '-print-only']))
 
-  #def test_shellcode_exec_run(self):
+  def test_shellcode_exec_run(self):
+    self.assertTrue('apbassett' in self.output_capture([self.py_to_use, '../shellcode.py', '-exec', 'test-files/shellcode1bin', '-subroutines', 'main', 'get_addr', 'printunity']))
+    self.assertTrue('apbassett' in self.output_capture([self.py_to_use, '../shellcode.py', '-exec', 'test-files/shellcode2bin', '-subroutines', 'main', 'exit']))
 
 if __name__ == '__main__':
     unittest.main()

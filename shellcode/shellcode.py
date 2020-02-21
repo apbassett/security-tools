@@ -40,18 +40,20 @@ def usage():
 # Compiles an assembler source file
 def compile_asm(filename, bits_32, subroutines, print_only):
   if bits_32:
-    subprocess.run(["gcc", "-m32", filename, "-o", "shellcode-files/" + filename + ".out"])
+    subprocess.run(["gcc", "-m32", filename, "-o", "shellcode-files/" + filename[filename.rfind('/') + 1:] + ".out"])
   else:
-    subprocess.run(["gcc", "-m64", filename, "-o", "shellcode-files/" + filename + ".out"])
+    subprocess.run(["gcc", filename, "-o", "shellcode-files/" + filename[filename.rfind('/') + 1:] + ".out"])
 
-  get_shellcode_from_asm(filename + ".out", bits_32, subroutines, print_only)
+  get_shellcode_from_asm(True, filename + ".out", bits_32, subroutines, print_only)
 
 # Extracts shellcode from a binary
-def get_shellcode_from_asm(filename, bits_32, subroutines, print_only):
+def get_shellcode_from_asm(src, filename, bits_32, subroutines, print_only):
   for i, sr in enumerate(subroutines, 0):
     subroutines[i] = '<' + sr + '>'
-
-  cmd = "objdump -d " + "shellcode-files/" + filename + " > shellcode-files/dissasembly.dump"
+  if src:
+    cmd = "objdump -d " + "shellcode-files/" + filename[filename.rfind('/') + 1:] + " > shellcode-files/dissasembly.dump"
+  else:
+    cmd = "objdump -d " + filename + " > shellcode-files/dissasembly.dump"
   subprocess.call(cmd, shell = True)
   file_obj = open("shellcode-files/dissasembly.dump", 'r')
   objdump = file_obj.read().split('\n\n')
@@ -166,7 +168,7 @@ def main(argv):
   if src:
     compile_asm(filename, m32, subroutines, print_only)
   else:
-    get_shellcode_from_asm(filename, m32, subroutines, print_only)
+    get_shellcode_from_asm(src, filename, m32, subroutines, print_only)
 
 if __name__ == "__main__":
   main(sys.argv[1:])
