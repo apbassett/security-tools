@@ -92,17 +92,17 @@ class Arguments:
     print("<-exec> ................................ The assembler file to extract the shellcode" +
            " from is already an executable")
     print("<-src> ................................. Compile source file with gcc-multilib and then" +
-           "extract shellcode")
+           " extract shellcode")
     print("SECOND ARGUMENT: assembler source/executable file path")
     print("THIRD ARGUMENT:")
     print("<-subroutines> ......................... the procedures/subroutines to extract" +
-           "shellcode from.\nList them after this argument; at least one required. For example, " +
-           "-subroutines main loop exit")
+           " shellcode from.\nList them after this argument; at least one required. For example, " +
+           "\"-subroutines main loop exit\"")
     print("FOURTH\FIFTH ARGUMENT:")
     print("<-print-only> .......................... Do not execute the shellcode in the test " +
            "program, just print it to stdout")
     print("<-m32> ................................. Compile the assembler source file as 32 bits" +
-           "(default if not specified)")
+           " (default if not specified)")
     print("<-m64> ................................. Compile the assembler source file as 64 bits\n")
     exit()
 
