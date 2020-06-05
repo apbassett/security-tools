@@ -1,11 +1,6 @@
 output.txt
 *.s.out
 *.dump
-*.s
-shellcode1
-shellcode2
-shellcode3
-shellcode4
 shellcode1bin
 shellcode2bin
 shellcode3bin
